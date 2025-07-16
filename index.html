@@ -494,8 +494,7 @@
             label.textContent = item.name;
             if (item.amount) label.textContent += ` (${item.amount.toLocaleString()})`;
             if (cb.checked) label.classList.add("checked-label");
-            cb.addEventListener("change", () => { saveProgress(); hideCompletedToggle.checked = JSON.parse(localStorage.getItem("hideCompleted") || "false");
-    render(); });
+            cb.addEventListener("change", () => { saveProgress(); render(); });
             li.appendChild(cb);
             li.appendChild(label);
             list.appendChild(li);
@@ -514,43 +513,25 @@
       const query = searchInput.value.trim().toLowerCase();
       searchResults.innerHTML = "";
       if (!query) return;
-
-      const saved = loadProgress();
       const matches = [];
-
       data.forEach((hall, hallIndex) => {
         hall.bundles.forEach((bundle, bundleIndex) => {
-          const keyPrefix = `${hallIndex}-${bundleIndex}-`;
-          let allComplete = true;
-          for (let i = 0; i < bundle.items.length; i++) {
-            if (!saved[`${keyPrefix}${i}`]) {
-              allComplete = false;
-              break;
+          bundle.items.forEach((item, itemIndex) => {
+            const itemName = item.name.toLowerCase();
+            if (itemName.includes(query)) {
+              const displayName = item.amount ? `${item.name} (${item.amount.toLocaleString()})` : item.name;
+              const id = `bundle-${hallIndex}-${bundleIndex}`;
+              matches.push(`<li class="list-group-item">
+                <a href="#${id}" class="text-decoration-none">
+                  <strong>${displayName}</strong> — ${bundle.name} (${hall.hall})
+                </a>
+              </li>`);
             }
-          }
-
-          if (!allComplete) {
-            bundle.items.forEach((item, itemIndex) => {
-              const itemName = item.name.toLowerCase();
-              if (itemName.includes(query)) {
-                const displayName = item.amount ? `${item.name} (${item.amount.toLocaleString()})` : item.name;
-                const id = `bundle-${hallIndex}-${bundleIndex}`;
-                matches.push(`<li class="list-group-item">
-                  <a href="#${id}" class="text-decoration-none">
-                    <strong>${displayName}</strong> — ${bundle.name} (${hall.hall})
-                  </a>
-                </li>`);
-              }
-            });
-          }
+          });
         });
       });
-
-      if (matches.length) {
-        searchResults.innerHTML = `<ul class="list-group">${matches.join("")}</ul>`;
-      } else {
-        searchResults.textContent = "No matches found.";
-      }
+      if (matches.length) searchResults.innerHTML = `<ul class="list-group">${matches.join("")}</ul>`;
+      else searchResults.textContent = "No matches found.";
     }
 
     function toggleBackToTop() {
@@ -587,10 +568,7 @@
       reader.readAsText(file);
     }
 
-    hideCompletedToggle.addEventListener("change", () => {
-  localStorage.setItem("hideCompleted", hideCompletedToggle.checked);
-  render();
-});
+    hideCompletedToggle.addEventListener("change", render);
     searchInput.addEventListener("input", handleSearch);
     document.getElementById("exportBtn").addEventListener("click", exportProgress);
     document.getElementById("importFile").addEventListener("change", (e) => {
